@@ -89,7 +89,7 @@ button { color: inherit; }
   letter-spacing: 0;
 }
 
-.brand em { color: var(--green); font-style: normal; }
+.brand em { color: var(--green-bright); font-style: normal; }
 
 .model-status {
   display: flex;
@@ -123,7 +123,7 @@ main {
 
 .eyebrow, .kicker, .section-label, .section-number {
   margin: 0 0 13px;
-  color: var(--green);
+  color: var(--green-bright);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -139,7 +139,7 @@ main {
 }
 
 .hero h1 span {
-  color: var(--green);
+  color: var(--green-bright);
   position: relative;
 }
 
@@ -228,7 +228,7 @@ main {
   border: 0;
   border-bottom: 1px solid currentColor;
   background: transparent;
-  color: var(--green);
+  color: var(--green-bright);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -285,7 +285,7 @@ input:focus, textarea:focus {
 .label-row label { margin: 0; font-size: 12px; font-weight: 700; }
 
 .upload-button {
-  color: var(--green);
+  color: var(--green-bright);
   border-bottom: 1px solid currentColor;
   cursor: pointer;
 }
@@ -516,7 +516,7 @@ input:focus, textarea:focus {
 }
 .resume-preview header { padding-bottom: 20px; border-bottom: 2px solid #202522; }
 .resume-preview h2 { margin: 0; font: 800 30px "Manrope", sans-serif; letter-spacing: -.04em; }
-.resume-preview .preview-title { margin: 4px 0; font-weight: 700; color: var(--green); }
+.resume-preview .preview-title { margin: 4px 0; font-weight: 700; color: #5b21b6; }
 .preview-contact { color: #58615c; font-size: 10px; }
 .resume-preview section { margin-top: 25px; }
 .resume-preview h3 { margin: 0 0 9px; padding-bottom: 5px; border-bottom: 1px solid #c9cecb; font-size: 10px; letter-spacing: .13em; text-transform: uppercase; }
