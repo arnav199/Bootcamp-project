@@ -1,0 +1,16 @@
+{
+  "name": "career-architect-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local AI resume analyzer, ATS matcher, and structured resume builder",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "evaluate": "node scripts/evaluate.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
