@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadDataset } from "./data.js";
 import { createAnalyzer } from "./analyzer.js";
+import { validateResumePayload } from "./validation.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const publicDir = path.join(root, "public");
@@ -84,6 +85,14 @@ const server = http.createServer(async (request, response) => {
     }
     if (request.method === "POST" && pathname === "/api/resume") {
       const body = await readJson(request);
+      const validation = validateResumePayload(body);
+      if (!validation.valid) {
+        json(response, 422, {
+          error: "Resume contains invalid or incomplete details.",
+          fields: validation.errors,
+        });
+        return;
+      }
       const schema = {
         basics: body.basics ?? {},
         summary: String(body.summary ?? "").trim(),

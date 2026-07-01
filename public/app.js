@@ -42,6 +42,142 @@ function escapeHtml(value = "") {
   return element.innerHTML;
 }
 
+function setValidationError(field, message = "") {
+  if (!field) return false;
+  const label = field.closest("label");
+  let feedback = label?.querySelector(".validation-message");
+  if (message) {
+    field.classList.add("invalid");
+    field.setAttribute("aria-invalid", "true");
+    if (!feedback && label) {
+      feedback = document.createElement("span");
+      feedback.className = "validation-message";
+      feedback.setAttribute("role", "alert");
+      label.append(feedback);
+    }
+    if (feedback) feedback.textContent = message;
+    return false;
+  }
+  field.classList.remove("invalid");
+  field.removeAttribute("aria-invalid");
+  feedback?.remove();
+  return true;
+}
+
+function validEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(value);
+}
+
+function validPhone(value) {
+  const digits = value.replace(/\D/g, "");
+  return /^\+?[\d\s().-]+$/.test(value) && digits.length >= 7 && digits.length <= 15;
+}
+
+function validWebAddress(value) {
+  try {
+    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    return Boolean(url.hostname && (url.hostname.includes(".") || url.hostname === "localhost"));
+  } catch {
+    return false;
+  }
+}
+
+function validateBasicField(field) {
+  const value = field.value.trim();
+  switch (field.name) {
+    case "fullName":
+      if (!value) return setValidationError(field, "Full name is required.");
+      if (value.length < 2 || !/\p{L}/u.test(value)) {
+        return setValidationError(field, "Enter a valid full name.");
+      }
+      break;
+    case "title":
+      if (value && value.length < 2) {
+        return setValidationError(field, "Professional title is too short.");
+      }
+      break;
+    case "email":
+      if (!value) return setValidationError(field, "Email address is required.");
+      if (!validEmail(value)) {
+        return setValidationError(field, "Enter a valid email, such as name@example.com.");
+      }
+      break;
+    case "phone":
+      if (!value) return setValidationError(field, "Phone number is required.");
+      if (!validPhone(value)) {
+        return setValidationError(field, "Use 7–15 digits. Only +, spaces, brackets, dots, and hyphens are allowed.");
+      }
+      break;
+    case "url":
+      if (value && !validWebAddress(value)) {
+        return setValidationError(field, "Enter a valid LinkedIn or portfolio address.");
+      }
+      break;
+    case "location":
+      if (value && value.length < 2) {
+        return setValidationError(field, "Enter a valid city or location.");
+      }
+      break;
+    case "summary":
+      if (value && value.length < 40) {
+        return setValidationError(field, "Use at least 40 characters for a useful professional summary.");
+      }
+      break;
+    default:
+      break;
+  }
+  return setValidationError(field);
+}
+
+function repeatEntryHasContent(entry) {
+  return $$("[data-field]", entry).some((field) => field.value.trim());
+}
+
+function validateRepeatField(field, entryHasContent = true) {
+  if (!entryHasContent) return setValidationError(field);
+  const type = field.closest("[data-entry]")?.dataset.entry;
+  const key = field.dataset.field;
+  const value = field.value.trim();
+  const required = {
+    experience: {
+      title: "Job title is required for this experience.",
+      company: "Company is required for this experience.",
+      startDate: "Start date is required.",
+      highlights: "Add at least one measurable achievement.",
+    },
+    education: {
+      degree: "Degree or qualification is required.",
+      institution: "Institution is required.",
+    },
+    project: {
+      name: "Project name is required.",
+      description: "Describe what you built and the result.",
+    },
+  };
+  if (required[type]?.[key] && !value) {
+    return setValidationError(field, required[type][key]);
+  }
+  return setValidationError(field);
+}
+
+function validateBuilder() {
+  let valid = true;
+  $$("input[name], textarea[name]", $("#builderForm")).forEach((field) => {
+    if (!validateBasicField(field)) valid = false;
+  });
+  $$("[data-entry]").forEach((entry) => {
+    const hasContent = repeatEntryHasContent(entry);
+    $$("[data-field]", entry).forEach((field) => {
+      if (!validateRepeatField(field, hasContent)) valid = false;
+    });
+  });
+  if (!valid) {
+    $(".invalid", $("#builderForm"))?.focus();
+    showToast("Please correct the highlighted details.");
+  }
+  return valid;
+}
+
 function setView(name) {
   $$(".mode-button").forEach((button) =>
     button.classList.toggle("active", button.dataset.view === name),
@@ -62,6 +198,17 @@ $("#resumeText").addEventListener("input", (event) => {
 $("#resumeFile").addEventListener("change", async (event) => {
   const [file] = event.target.files;
   if (!file) return;
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  if (!["txt", "md", "json"].includes(extension)) {
+    event.target.value = "";
+    $("#analyzerError").textContent = "Import a TXT, Markdown, or JSON file.";
+    return;
+  }
+  if (file.size > 1_000_000) {
+    event.target.value = "";
+    $("#analyzerError").textContent = "The imported file must be smaller than 1 MB.";
+    return;
+  }
   const content = await file.text();
   let text = content;
   if (file.name.endsWith(".json")) {
@@ -74,6 +221,7 @@ $("#resumeFile").addEventListener("change", async (event) => {
   }
   $("#resumeText").value = text;
   $("#resumeText").dispatchEvent(new Event("input"));
+  $("#analyzerError").textContent = "";
   showToast(`${file.name} imported`);
 });
 
@@ -106,6 +254,23 @@ $("#analyzerForm").addEventListener("submit", async (event) => {
   const button = $("#analyzeButton");
   const error = $("#analyzerError");
   error.textContent = "";
+  const resumeText = $("#resumeText").value.trim();
+  const jobDescription = $("#jobDescription").value.trim();
+  if (!resumeText) {
+    error.textContent = "Resume content is required.";
+    $("#resumeText").focus();
+    return;
+  }
+  if (resumeText.length < 80) {
+    error.textContent = "Resume content is too short. Provide at least 80 characters.";
+    $("#resumeText").focus();
+    return;
+  }
+  if (jobDescription && jobDescription.length < 40) {
+    error.textContent = "The job description is too short for reliable matching.";
+    $("#jobDescription").focus();
+    return;
+  }
   button.disabled = true;
   button.querySelector("span").textContent = "Mapping evidence…";
   try {
@@ -113,8 +278,8 @@ $("#analyzerForm").addEventListener("submit", async (event) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        resumeText: $("#resumeText").value,
-        jobDescription: $("#jobDescription").value,
+        resumeText,
+        jobDescription,
         targetRole: $("#targetRole").value,
       }),
     });
@@ -216,7 +381,25 @@ function updateResumeState() {
   renderResume();
 }
 
-$("#builderForm").addEventListener("input", updateResumeState);
+$("#builderForm").addEventListener("input", (event) => {
+  updateResumeState();
+  if (event.target.classList.contains("invalid")) {
+    if (event.target.dataset.field) {
+      validateRepeatField(event.target, repeatEntryHasContent(event.target.closest("[data-entry]")));
+    } else {
+      validateBasicField(event.target);
+    }
+  }
+});
+
+$("#builderForm").addEventListener("focusout", (event) => {
+  if (!event.target.matches("input, textarea")) return;
+  if (event.target.dataset.field) {
+    validateRepeatField(event.target, repeatEntryHasContent(event.target.closest("[data-entry]")));
+  } else {
+    validateBasicField(event.target);
+  }
+});
 
 function renderResume() {
   const { basics, summary, skills, experience, education, projects } = state.resume;
@@ -305,18 +488,24 @@ function resumeAsText() {
 
 $("#copyResume").addEventListener("click", async () => {
   updateResumeState();
+  if (!validateBuilder()) return;
   await navigator.clipboard.writeText(resumeAsText());
   showToast("ATS text copied");
 });
 
 $("#downloadJson").addEventListener("click", async () => {
   updateResumeState();
+  if (!validateBuilder()) return;
   const response = await fetch("/api/resume", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(state.resume),
   });
   const schema = await response.json();
+  if (!response.ok) {
+    showToast(schema.error || "Resume details are invalid.");
+    return;
+  }
   const blob = new Blob([JSON.stringify(schema, null, 2)], { type: "application/json" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);

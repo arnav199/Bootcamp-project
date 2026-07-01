@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Private, local AI resume analysis and career architecture." />
     <title>Career Architect AI</title>
-    <link rel="stylesheet" href="/styles.css?v=midnight" />
+    <link rel="stylesheet" href="/styles.css?v=liquid-glass" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -52,7 +52,7 @@
               <button class="text-button" id="loadDemo" type="button">Use sample</button>
             </div>
 
-            <form id="analyzerForm">
+            <form id="analyzerForm" novalidate>
               <label for="targetRole">Target role <small>optional</small></label>
               <input id="targetRole" name="targetRole" list="roleOptions" placeholder="e.g. Machine Learning Engineer" />
               <datalist id="roleOptions"></datalist>
@@ -149,23 +149,23 @@
                 <h2>Build for machines and humans</h2>
               </div>
             </div>
-            <form id="builderForm">
+            <form id="builderForm" novalidate>
               <div class="form-section">
                 <p class="section-number">01 · Identity</p>
                 <div class="two-columns">
-                  <label>Full name<input name="fullName" required placeholder="Avery Morgan" /></label>
-                  <label>Professional title<input name="title" placeholder="Data Analyst" /></label>
-                  <label>Email<input name="email" type="email" placeholder="avery@example.com" /></label>
-                  <label>Phone<input name="phone" placeholder="+91 98765 43210" /></label>
-                  <label>Location<input name="location" placeholder="Bengaluru, India" /></label>
-                  <label>LinkedIn / portfolio<input name="url" placeholder="linkedin.com/in/avery" /></label>
+                  <label>Full name<input name="fullName" required maxlength="80" autocomplete="name" placeholder="Avery Morgan" /></label>
+                  <label>Professional title<input name="title" maxlength="100" placeholder="Data Analyst" /></label>
+                  <label>Email<input name="email" type="email" required maxlength="254" autocomplete="email" placeholder="avery@example.com" /></label>
+                  <label>Phone<input name="phone" type="tel" required maxlength="24" autocomplete="tel" placeholder="+91 98765 43210" /></label>
+                  <label>Location<input name="location" maxlength="100" autocomplete="address-level2" placeholder="Bengaluru, India" /></label>
+                  <label>LinkedIn / portfolio<input name="url" maxlength="300" autocomplete="url" placeholder="linkedin.com/in/avery" /></label>
                 </div>
               </div>
 
               <div class="form-section">
                 <p class="section-number">02 · Positioning</p>
                 <label>Professional summary
-                  <textarea name="summary" class="short" placeholder="3–4 lines connecting your experience, specialization, and measurable impact."></textarea>
+                  <textarea name="summary" class="short" maxlength="700" placeholder="3–4 lines connecting your experience, specialization, and measurable impact."></textarea>
                 </label>
                 <label>Skills <small>comma separated</small>
                   <input name="skills" placeholder="Python, SQL, Tableau, Stakeholder Management" />
@@ -284,6 +284,6 @@
     </template>
 
     <div class="toast" id="toast" role="status"></div>
-    <script type="module" src="/app.js"></script>
+    <script type="module" src="/app.js?v=validation"></script>
   </body>
 </html>
