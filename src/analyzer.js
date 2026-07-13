@@ -78,6 +78,29 @@ function unique(values) {
   return [...new Set(values)];
 }
 
+function scoreProfile(profile, resumeSkills, resumeVector, resumeTokens, years) {
+  const desiredSkills = unique([...profile.requiredSkills, ...profile.topSkills]).slice(0, 14);
+  const matched = desiredSkills.filter((skill) => resumeSkills.has(normalize(skill)));
+  const skillFit = desiredSkills.length ? matched.length / desiredSkills.length : 0;
+  const semanticFit = cosine(resumeVector, profile.vector);
+  const roleTokens = tokens(profile.title);
+  const titleFit = roleTokens.length
+    ? roleTokens.filter((token) => resumeTokens.has(token)).length / roleTokens.length
+    : 0;
+  const expFit = years
+    ? Math.min(years / Math.max(profile.requiredExperience, 1), 1)
+    : 0.45;
+  const rawScore = 0.55 * skillFit + 0.25 * semanticFit + 0.12 * titleFit + 0.08 * expFit;
+
+  return {
+    score: Math.round(Math.min(rawScore * 125, 100)),
+    matchedSkills: matched,
+    missingSkills: desiredSkills.filter((skill) => !resumeSkills.has(normalize(skill))).slice(0, 8),
+    requiredExperience: profile.requiredExperience,
+    salaryRange: profile.salaryRange,
+  };
+}
+
 export function createAnalyzer(dataset) {
   const profiles = new Map();
   const documentFrequency = new Map();
@@ -124,6 +147,7 @@ export function createAnalyzer(dataset) {
   ]).sort((a, b) => b.length - a.length);
 
   const skillLookup = new Map(skillCatalog.map((skill) => [normalize(skill), skill]));
+  const profileByTitle = new Map([...profiles.values()].map((profile) => [normalize(profile.title), profile]));
 
   for (const profile of profiles.values()) {
     const requirement = roleRequirements.get(normalize(profile.title));
@@ -172,27 +196,11 @@ export function createAnalyzer(dataset) {
 
     return [...profiles.values()]
       .map((profile) => {
-        const desiredSkills = unique([...profile.requiredSkills, ...profile.topSkills]).slice(0, 14);
-        const matched = desiredSkills.filter((skill) => resumeSkills.has(normalize(skill)));
-        const skillFit = desiredSkills.length ? matched.length / desiredSkills.length : 0;
-        const semanticFit = cosine(resumeVector, profile.vector);
-        const roleTokens = tokens(profile.title);
-        const titleFit = roleTokens.length
-          ? roleTokens.filter((token) => resumeTokens.has(token)).length / roleTokens.length
-          : 0;
-        const expFit = years
-          ? Math.min(years / Math.max(profile.requiredExperience, 1), 1)
-          : 0.45;
-        const rawScore =
-          0.55 * skillFit + 0.25 * semanticFit + 0.12 * titleFit + 0.08 * expFit;
+        const scored = scoreProfile(profile, resumeSkills, resumeVector, resumeTokens, years);
         return {
           title: profile.title,
           category: profile.category,
-          score: Math.round(Math.min(rawScore * 125, 100)),
-          matchedSkills: matched,
-          missingSkills: desiredSkills.filter((skill) => !resumeSkills.has(normalize(skill))).slice(0, 8),
-          requiredExperience: profile.requiredExperience,
-          salaryRange: profile.salaryRange,
+          ...scored,
         };
       })
       .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
@@ -207,23 +215,27 @@ export function createAnalyzer(dataset) {
     const predicted = rankings[0];
     const resumeYears = experienceYears(resumeText);
     const resumeEducation = educationLevel(resumeText);
+    const resumeSkillSet = new Set(resumeSkills.map(normalize));
+    const resumeVector = vectorize(resumeText, idf);
+    const resumeTokens = new Set(tokens(resumeText.replaceAll("-", " ")));
+    const targetProfile = profileByTitle.get(normalize(targetRole));
+    const targetRequirement = roleRequirements.get(normalize(targetRole));
 
     let jdSkills = extractSkills(jobDescription);
-    const targetProfile = roleRequirements.get(normalize(targetRole));
-    if (!jdSkills.length && targetProfile) jdSkills = splitPipe(targetProfile["Required Skills"]);
+    if (!jdSkills.length && targetRequirement) jdSkills = splitPipe(targetRequirement["Required Skills"]);
 
     const jdYears = experienceYears(jobDescription) ||
-      Number(targetProfile?.["Experience Years"] ?? 0);
+      Number(targetRequirement?.["Experience Years"] ?? 0);
     const jdEducation = educationLevel(jobDescription) ||
-      educationLevel(targetProfile?.["Education Requirement"] ?? "");
-    const resumeSkillSet = new Set(resumeSkills.map(normalize));
+      educationLevel(targetRequirement?.["Education Requirement"] ?? "");
     const matchedSkills = jdSkills.filter((skill) => resumeSkillSet.has(normalize(skill)));
     const missingSkills = jdSkills.filter((skill) => !resumeSkillSet.has(normalize(skill)));
 
     const hasJobTarget = Boolean(jobDescription.trim() || targetRole.trim());
     const skillScore = jdSkills.length ? matchedSkills.length / jdSkills.length : predicted.score / 100;
-    const semanticScore = jobDescription.trim()
-      ? cosine(vectorize(resumeText, idf), vectorize(jobDescription, idf))
+    const targetText = [jobDescription.trim(), targetRole.trim()].filter(Boolean).join(" ");
+    const semanticScore = targetText
+      ? cosine(resumeVector, vectorize(targetText, idf))
       : predicted.score / 100;
     const experienceScore = jdYears
       ? Math.min(resumeYears / jdYears, 1)
@@ -245,8 +257,8 @@ export function createAnalyzer(dataset) {
       ),
     );
 
-    const roleAlignment = targetRole
-      ? rankings.find((role) => normalize(role.title) === normalize(targetRole))?.score ?? 0
+    const roleAlignment = targetProfile
+      ? scoreProfile(targetProfile, resumeSkillSet, resumeVector, resumeTokens, resumeYears).score
       : predicted.score;
 
     return {

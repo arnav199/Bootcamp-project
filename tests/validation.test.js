@@ -48,7 +48,31 @@ test("accepts a complete resume payload", () => {
       name: "Forecasting Engine",
       description: "Built a demand forecasting pipeline.",
     }],
+    certifications: [{
+      name: "AWS Certified Cloud Practitioner",
+      issuer: "Amazon Web Services",
+      date: "May 2025",
+    }],
   });
   assert.deepEqual(result, { valid: true, errors: {} });
+});
+
+test("rejects incomplete certification entries", () => {
+  const result = validateResumePayload({
+    basics: {
+      name: "Avery Morgan",
+      email: "avery@example.com",
+      phone: "+91 98765 43210",
+    },
+    certifications: [{
+      name: "",
+      issuer: "",
+      date: "",
+    }],
+  });
+  assert.equal(result.valid, false);
+  assert.ok(result.errors["certification.0.name"]);
+  assert.ok(result.errors["certification.0.issuer"]);
+  assert.ok(result.errors["certification.0.date"]);
 });
 

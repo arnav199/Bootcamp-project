@@ -37,3 +37,14 @@ test("analyzes a targeted resume and returns bounded scoring", () => {
   assert.equal(result.model.trainingRecords, 10_000);
 });
 
+test("uses the requested target role when it is not the top prediction", () => {
+  const result = analyzer.analyze(
+    "Built Python APIs, deployed Node.js services, and collaborated with product teams. 4 years of experience. Bachelor's in Computer Science.",
+    "",
+    "Software Engineer",
+  );
+  assert.ok(result.roleAlignment > 0);
+  assert.notEqual(result.match.skillCoverage, null);
+  assert.ok(result.match.skillCoverage > 0);
+});
+

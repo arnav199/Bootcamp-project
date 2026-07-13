@@ -40,7 +40,7 @@ export function validateResumePayload(payload = {}) {
 
   if (!phone) errors.phone = "Phone number is required.";
   else if (!isPhone(phone)) {
-    errors.phone = "Use a valid phone number containing 7–15 digits.";
+    errors.phone = "Use a valid phone number containing 7 to 15 digits.";
   }
 
   if (url && !isWebAddress(url)) {
@@ -48,7 +48,7 @@ export function validateResumePayload(payload = {}) {
   }
 
   if (summary && (summary.length < 40 || summary.length > 700)) {
-    errors.summary = "Professional summary must contain 40–700 characters.";
+    errors.summary = "Professional summary must contain 40 to 700 characters.";
   }
 
   const experience = Array.isArray(payload.experience) ? payload.experience : [];
@@ -77,6 +77,13 @@ export function validateResumePayload(payload = {}) {
     }
   });
 
+  const certifications = Array.isArray(payload.certifications) ? payload.certifications : [];
+  certifications.forEach((entry, index) => {
+    if (!text(entry.name)) errors[`certification.${index}.name`] = "Certification name is required.";
+    if (!text(entry.issuer)) errors[`certification.${index}.issuer`] = "Issuer is required.";
+    if (!text(entry.date)) errors[`certification.${index}.date`] = "Date is required.";
+  });
+
   return {
     valid: Object.keys(errors).length === 0,
     errors,
@@ -84,4 +91,3 @@ export function validateResumePayload(payload = {}) {
 }
 
 export const validators = { isEmail, isPhone, isWebAddress };
-

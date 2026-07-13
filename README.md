@@ -1,102 +1,136 @@
 # Career Architect AI
 
-A local-first resume analyzer, job-description matcher, career recommender, and
-ATS-compatible resume builder. The intelligence engine is trained at startup
-from the bundled Kaggle resume-role dataset and does not call an external AI API.
+Career Architect AI is a simple student project for resume analysis and resume
+building. It runs on the local computer and does not call any paid AI API.
 
-## Features
+The project can:
 
-- Predicts the strongest role and three career directions from resume text
-- Scores resume-to-job fit from 0–100
-- Extracts canonical skills, education level, and years of experience
-- Reports matched skills, missing skills, semantic fit, and experience fit
-- Builds a structured resume with a live ATS-safe preview
-- Exports a strict JSON resume schema or plain ATS text
-- Runs entirely on the local machine after startup
+- read resume text
+- suggest suitable job roles
+- compare a resume with a job description
+- show matched and missing skills
+- build a clean ATS friendly resume
+- export resume data as JSON
 
-## Run
+## Tech Stack
 
-Requirements: Node.js 20 or newer. No package installation is required.
+- HTML: creates the page structure.
+- CSS: creates the black and white liquid glass design.
+- JavaScript: handles button clicks, forms, API calls, and resume preview.
+- Node.js: runs the local web server.
+- Node HTTP module: creates the API without extra packages.
+- CSV and JSON data: stores resume examples, job roles, and skills.
+- Node test runner: checks that important functions still work.
+
+## Why These Technologies Are Used
+
+HTML, CSS, and JavaScript are used because they are the basic technologies for a
+web application. They are easy to open in a browser and good for a first web
+project.
+
+Node.js is used because it lets JavaScript run on the server. This means the
+frontend and backend can both use JavaScript.
+
+The project does not use extra npm packages for the server. This keeps the code
+simple and easier to explain.
+
+## How To Run
+
+Requirement: Node.js 20 or newer.
 
 ```powershell
 npm.cmd start
 ```
 
-Open <http://localhost:3000>.
+Then open:
 
-Development mode:
+```text
+http://localhost:3000
+```
+
+For development mode:
 
 ```powershell
 npm.cmd run dev
 ```
 
-## Test and evaluate
+## How To Test
 
 ```powershell
 npm.cmd test
+```
+
+To run the small evaluation script:
+
+```powershell
 npm.cmd run evaluate
 ```
 
-The evaluation script measures top-1 and top-3 recall against the dataset's
-small held-out example set. It is a smoke test, not a production benchmark.
+## Project Structure
 
-## Model
+```text
+public/                        Frontend files
+src/server.js                  Local server and API routes
+src/analyzer.js                Resume analysis and scoring logic
+src/data.js                    Loads CSV and JSON data
+src/validation.js              Checks resume builder input
+tests/                         Automated tests
+scripts/evaluate.js            Simple evaluation script
+data/raw/resume-role-dataset/  Dataset files
+```
 
-The engine loads 10,000 synthetic resumes covering 324 job-role labels. It
-builds:
+## Main API Routes
 
-1. TF-IDF document-frequency weights from the training corpus.
-2. A semantic centroid for each job role.
-3. Per-role skill-frequency, education, and experience profiles.
-4. A deterministic weighted ranker combining skill coverage (55%), semantic
-   similarity (25%), title evidence (12%), and experience fit (8%).
+### POST /api/analyze
 
-Targeted job matching separately combines skill coverage (55%), semantic
-similarity (25%), experience (12%), and education (8%). Every score is
-explainable from these components.
+This route checks resume text and returns:
 
-## API
+- predicted role
+- score from 0 to 100
+- matched skills
+- missing skills
+- suggested roles
 
-### `POST /api/analyze`
+Example body:
 
 ```json
 {
-  "resumeText": "Bachelor's in Computer Science...",
-  "jobDescription": "We are hiring a software engineer...",
-  "targetRole": "Software Engineer"
+  "resumeText": "Bachelor's in Computer Science. Skills: Python, SQL...",
+  "jobDescription": "We need a data analyst with Python and SQL.",
+  "targetRole": "Data Analyst"
 }
 ```
 
-`jobDescription` and `targetRole` are optional. Without them, the endpoint
-returns role recommendations based on the resume.
+### POST /api/resume
 
-### `POST /api/resume`
+This route checks the resume builder data and returns a clean JSON resume
+schema.
 
-Normalizes builder data into the resume JSON schema.
+### GET /api/meta
 
-### `GET /api/meta`
+This route returns basic model information like number of records, roles, and
+available role titles.
 
-Returns loaded model coverage and available role titles.
+## How The Analyzer Works
 
-## Project structure
+The analyzer loads the dataset when the server starts. It reads resume examples,
+job roles, and skills. Then it makes simple role profiles from that data.
 
-```text
-data/raw/resume-role-dataset/  Training data and provenance
-public/                        Browser interface
-scripts/evaluate.js            Held-out sample evaluation
-src/analyzer.js                Training, extraction, scoring, recommendations
-src/data.js                    Dataset loader and CSV parser
-src/server.js                  Zero-dependency HTTP and JSON API server
-tests/                         Unit and integration tests
-```
+When a user enters resume text, the analyzer:
 
-## Responsible-use boundary
+1. cleans the text
+2. finds known skills
+3. checks education and experience
+4. compares the text with role profiles
+5. calculates a score
+6. returns the best roles and skill gaps
 
-This project is decision-support software, not an automated hiring authority.
-The bundled data is synthetic. Do not add protected characteristics to scoring,
-and do not use a score as the sole basis for an employment decision. Before
-real-world use, validate performance and disparate impact on representative,
-consented evaluation data.
+The scoring is explainable. It uses skill coverage, text similarity, job title
+signals, education, and experience. The score should be used only as guidance.
 
-Dataset source and license details are documented in
-[`data/raw/resume-role-dataset/README.md`](data/raw/resume-role-dataset/README.md).
+## Responsible Use
+
+This project is only a learning and decision-support tool. It should not be used
+as the only reason to accept or reject a candidate.
+
+The dataset is synthetic, so real-world use would need more testing.

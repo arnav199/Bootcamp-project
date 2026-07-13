@@ -3,96 +3,82 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Private, local AI resume analysis and career architecture." />
+    <meta name="description" content="Simple local resume analyzer and resume builder project." />
     <title>Career Architect AI</title>
-    <link rel="stylesheet" href="/styles.css?v=liquid-glass" />
+    <link rel="stylesheet" href="/styles.css?v=simple-glass" />
   </head>
   <body>
-    <div class="ambient ambient-one"></div>
-    <div class="ambient ambient-two"></div>
-
     <header class="topbar">
-      <a class="brand" href="/" aria-label="Career Architect home">
+      <a class="brand" href="/" aria-label="Career Architect AI home">
         <span class="brand-mark">CA</span>
-        <span>Career Architect <em>AI</em></span>
+        <span>Career Architect AI</span>
       </a>
       <div class="model-status" id="modelStatus">
         <span class="status-dot"></span>
-        <span>Loading intelligence…</span>
+        <span>Loading model...</span>
       </div>
     </header>
 
     <main>
-      <section class="hero">
-        <p class="eyebrow">Evidence over keywords</p>
-        <h1>Turn your career story<br />into a <span>clear signal.</span></h1>
-        <p class="hero-copy">
-          Local-first resume intelligence trained across hundreds of roles.
-          Diagnose fit, close skill gaps, and build an ATS-ready resume.
+      <section class="page-title">
+        <p class="kicker">Bootcamp Project</p>
+        <h1>Resume Analyzer and Builder</h1>
+        <p>
+          This project checks resume text, suggests suitable job roles, finds skill gaps,
+          and helps build a simple ATS friendly resume.
         </p>
       </section>
 
       <nav class="mode-switch" aria-label="Application mode">
-        <button class="mode-button active" data-view="analyzer">
-          <span>01</span> Analyze a resume
-        </button>
-        <button class="mode-button" data-view="builder">
-          <span>02</span> Build a resume
-        </button>
+        <button class="mode-button active" data-view="analyzer" type="button">Resume Analyzer</button>
+        <button class="mode-button" data-view="builder" type="button">Resume Builder</button>
       </nav>
 
       <section id="analyzerView" class="view active">
         <div class="workspace-grid">
-          <article class="panel input-panel">
+          <article class="panel">
             <div class="panel-heading">
               <div>
                 <p class="kicker">Analyzer</p>
-                <h2>Map your current position</h2>
+                <h2>Check Resume</h2>
               </div>
-              <button class="text-button" id="loadDemo" type="button">Use sample</button>
+              <button class="text-button" id="loadDemo" type="button">Use Sample</button>
             </div>
 
             <form id="analyzerForm" novalidate>
-              <label for="targetRole">Target role <small>optional</small></label>
-              <input id="targetRole" name="targetRole" list="roleOptions" placeholder="e.g. Machine Learning Engineer" />
+              <label for="targetRole">Target Role <small>optional</small></label>
+              <input id="targetRole" name="targetRole" list="roleOptions" placeholder="Example: Data Scientist" />
               <datalist id="roleOptions"></datalist>
 
               <div class="label-row">
-                <label for="resumeText">Resume content</label>
+                <label for="resumeText">Resume Text</label>
                 <label class="upload-button" for="resumeFile">
-                  Import text
+                  Import Text
                   <input id="resumeFile" type="file" accept=".txt,.md,.json,text/plain,application/json" />
                 </label>
               </div>
               <textarea id="resumeText" name="resumeText" required
-                placeholder="Paste your resume here. Include explicit skills, education, experience dates, achievements, and projects."></textarea>
-              <p class="field-hint"><span id="resumeCount">0</span> characters · Your data stays on this machine.</p>
+                placeholder="Paste your resume text here. Include skills, education, experience, projects, and achievements."></textarea>
+              <p class="field-hint"><span id="resumeCount">0</span> characters. Data is processed locally.</p>
 
-              <label for="jobDescription">Job description <small>optional</small></label>
+              <label for="jobDescription">Job Description <small>optional</small></label>
               <textarea id="jobDescription" name="jobDescription" class="short"
-                placeholder="Paste a job description for a targeted match, or leave blank for role recommendations."></textarea>
+                placeholder="Paste a job description if you want to compare your resume with a specific job."></textarea>
 
-              <button class="primary-button" id="analyzeButton" type="submit">
-                <span>Run deep analysis</span>
-                <span class="arrow">↗</span>
-              </button>
+              <button class="primary-button" id="analyzeButton" type="submit">Analyze</button>
               <p class="form-error" id="analyzerError" role="alert"></p>
             </form>
           </article>
 
-          <aside class="panel insight-panel empty-state" id="resultsPanel">
-            <div id="emptyResults">
-              <div class="radar">
-                <span></span><span></span><span></span>
-                <i></i>
-              </div>
-              <p class="kicker">Awaiting evidence</p>
-              <h2>Your career map will appear here.</h2>
-              <p>Add a resume, then run the analysis to surface your strongest role vector and practical gaps.</p>
+          <aside class="panel result-panel" id="resultsPanel">
+            <div id="emptyResults" class="empty-results">
+              <p class="kicker">Result</p>
+              <h2>Analysis will appear here</h2>
+              <p>Enter resume text and click Analyze to see role suggestions and skill gaps.</p>
               <div class="empty-metrics">
-                <div><strong>324</strong><span>role profiles</span></div>
-                <div><strong>10k</strong><span>training resumes</span></div>
-                <div><strong>Local</strong><span>private runtime</span></div>
+                <div><strong>324</strong><span>Roles</span></div>
+                <div><strong>10k</strong><span>Resumes</span></div>
+                <div><strong>Local</strong><span>Runtime</span></div>
               </div>
             </div>
 
@@ -100,39 +86,39 @@
               <div class="result-hero">
                 <div class="score-ring" id="scoreRing">
                   <strong id="matchScore">0</strong>
-                  <span>match</span>
+                  <span>score</span>
                 </div>
                 <div>
-                  <p class="kicker" id="scoreLabel">Analysis complete</p>
-                  <h2 id="predictedRole">—</h2>
-                  <p id="roleCategory">—</p>
+                  <p class="kicker" id="scoreLabel">Analysis Complete</p>
+                  <h2 id="predictedRole">-</h2>
+                  <p id="roleCategory">-</p>
                 </div>
               </div>
 
               <div class="metric-strip">
-                <div><span>Skill coverage</span><strong id="skillCoverage">—</strong></div>
-                <div><span>Semantic fit</span><strong id="semanticFit">—</strong></div>
-                <div><span>Experience</span><strong id="experienceFit">—</strong></div>
+                <div><span>Skill Coverage</span><strong id="skillCoverage">-</strong></div>
+                <div><span>Text Match</span><strong id="semanticFit">-</strong></div>
+                <div><span>Experience</span><strong id="experienceFit">-</strong></div>
               </div>
 
               <div class="analysis-section">
-                <p class="section-label">Diagnostic</p>
+                <p class="section-label">Explanation</p>
                 <div class="diagnostic-list">
-                  <div><span>Macro</span><p id="macroFit"></p></div>
-                  <div><span>Micro</span><p id="microFit"></p></div>
-                  <div><span>Gap</span><p id="gapAnalysis"></p></div>
+                  <div><span>Main</span><p id="macroFit"></p></div>
+                  <div><span>Skills</span><p id="microFit"></p></div>
+                  <div><span>Gaps</span><p id="gapAnalysis"></p></div>
                 </div>
               </div>
 
               <div class="analysis-section">
-                <p class="section-label">Matched skills</p>
+                <p class="section-label">Matched Skills</p>
                 <div class="chips" id="matchedSkills"></div>
-                <p class="section-label gap-label">Priority gaps</p>
+                <p class="section-label gap-label">Missing Skills</p>
                 <div class="chips gap-chips" id="missingSkills"></div>
               </div>
 
               <div class="analysis-section">
-                <p class="section-label">Best-fit directions</p>
+                <p class="section-label">Suggested Roles</p>
                 <div id="recommendations" class="recommendations"></div>
               </div>
             </div>
@@ -142,67 +128,76 @@
 
       <section id="builderView" class="view">
         <div class="builder-grid">
-          <article class="panel builder-form-panel">
+          <article class="panel">
             <div class="panel-heading">
               <div>
-                <p class="kicker">Structured builder</p>
-                <h2>Build for machines and humans</h2>
+                <p class="kicker">Builder</p>
+                <h2>Create Resume</h2>
               </div>
             </div>
+
             <form id="builderForm" novalidate>
               <div class="form-section">
-                <p class="section-number">01 · Identity</p>
+                <p class="section-number">1. Basic Details</p>
                 <div class="two-columns">
-                  <label>Full name<input name="fullName" required maxlength="80" autocomplete="name" placeholder="Avery Morgan" /></label>
-                  <label>Professional title<input name="title" maxlength="100" placeholder="Data Analyst" /></label>
+                  <label>Full Name<input name="fullName" required maxlength="80" autocomplete="name" placeholder="Avery Morgan" /></label>
+                  <label>Title<input name="title" maxlength="100" placeholder="Data Analyst" /></label>
                   <label>Email<input name="email" type="email" required maxlength="254" autocomplete="email" placeholder="avery@example.com" /></label>
                   <label>Phone<input name="phone" type="tel" required maxlength="24" autocomplete="tel" placeholder="+91 98765 43210" /></label>
                   <label>Location<input name="location" maxlength="100" autocomplete="address-level2" placeholder="Bengaluru, India" /></label>
-                  <label>LinkedIn / portfolio<input name="url" maxlength="300" autocomplete="url" placeholder="linkedin.com/in/avery" /></label>
+                  <label>LinkedIn / Portfolio<input name="url" maxlength="300" autocomplete="url" placeholder="linkedin.com/in/avery" /></label>
                 </div>
               </div>
 
               <div class="form-section">
-                <p class="section-number">02 · Positioning</p>
-                <label>Professional summary
-                  <textarea name="summary" class="short" maxlength="700" placeholder="3–4 lines connecting your experience, specialization, and measurable impact."></textarea>
+                <p class="section-number">2. Summary and Skills</p>
+                <label>Summary
+                  <textarea name="summary" class="short" maxlength="700" placeholder="Write a short professional summary."></textarea>
                 </label>
                 <label>Skills <small>comma separated</small>
-                  <input name="skills" placeholder="Python, SQL, Tableau, Stakeholder Management" />
+                  <input name="skills" placeholder="Python, SQL, Excel, Communication" />
                 </label>
               </div>
 
               <div class="form-section">
                 <div class="section-title-row">
-                  <p class="section-number">03 · Experience</p>
-                  <button type="button" class="add-button" data-add="experience">+ Add role</button>
+                  <p class="section-number">3. Experience</p>
+                  <button type="button" class="add-button" data-add="experience">Add Role</button>
                 </div>
                 <div id="experienceEntries" class="repeat-list"></div>
               </div>
 
               <div class="form-section">
                 <div class="section-title-row">
-                  <p class="section-number">04 · Education</p>
-                  <button type="button" class="add-button" data-add="education">+ Add education</button>
+                  <p class="section-number">4. Education</p>
+                  <button type="button" class="add-button" data-add="education">Add Education</button>
                 </div>
                 <div id="educationEntries" class="repeat-list"></div>
               </div>
 
               <div class="form-section">
                 <div class="section-title-row">
-                  <p class="section-number">05 · Projects</p>
-                  <button type="button" class="add-button" data-add="project">+ Add project</button>
+                  <p class="section-number">5. Projects</p>
+                  <button type="button" class="add-button" data-add="project">Add Project</button>
                 </div>
                 <div id="projectEntries" class="repeat-list"></div>
+              </div>
+
+              <div class="form-section">
+                <div class="section-title-row">
+                  <p class="section-number">6. Certifications</p>
+                  <button type="button" class="add-button" data-add="certification">Add Certificate</button>
+                </div>
+                <div id="certificationEntries" class="repeat-list"></div>
               </div>
             </form>
           </article>
 
           <aside class="preview-column">
             <div class="preview-actions">
-              <span>Live ATS preview</span>
+              <span>Resume Preview</span>
               <div>
-                <button class="text-button" id="copyResume" type="button">Copy text</button>
+                <button class="text-button" id="copyResume" type="button">Copy Text</button>
                 <button class="secondary-button" id="downloadJson" type="button">Download JSON</button>
               </div>
             </div>
@@ -210,19 +205,19 @@
               <header>
                 <h2>Your Name</h2>
                 <p class="preview-title">Professional Title</p>
-                <p class="preview-contact">email@example.com · City · LinkedIn</p>
+                <p class="preview-contact">email@example.com | City | LinkedIn</p>
               </header>
               <section data-preview="summary">
                 <h3>Professional Summary</h3>
-                <p>Your focused professional summary will appear here.</p>
+                <p>Your summary will appear here.</p>
               </section>
               <section data-preview="skills">
-                <h3>Core Skills</h3>
-                <p>Add role-relevant skills using standard terminology.</p>
+                <h3>Skills</h3>
+                <p>Add skills separated by commas.</p>
               </section>
               <section data-preview="experience">
-                <h3>Professional Experience</h3>
-                <p>Add a role and describe evidence-backed achievements.</p>
+                <h3>Experience</h3>
+                <p>Add your experience.</p>
               </section>
               <section data-preview="education">
                 <h3>Education</h3>
@@ -230,7 +225,11 @@
               </section>
               <section data-preview="projects">
                 <h3>Projects</h3>
-                <p>Add relevant projects.</p>
+                <p>Add your projects.</p>
+              </section>
+              <section data-preview="certifications">
+                <h3>Certifications</h3>
+                <p>Add your certifications.</p>
               </section>
             </article>
           </aside>
@@ -239,51 +238,63 @@
     </main>
 
     <footer>
-      <p>Career Architect AI · Dataset-trained, locally operated.</p>
-      <p>Decision support only—never an automated hiring decision.</p>
+      <p>Career Architect AI - Student Bootcamp Project</p>
+      <p>This tool gives suggestions only.</p>
     </footer>
 
     <template id="experienceTemplate">
       <div class="repeat-card" data-entry="experience">
-        <button type="button" class="remove-button" aria-label="Remove entry">×</button>
+        <button type="button" class="remove-button" aria-label="Remove entry">x</button>
         <div class="two-columns">
-          <label>Job title<input data-field="title" placeholder="Software Engineer" /></label>
-          <label>Company<input data-field="company" placeholder="Acme Labs" /></label>
-          <label>Start date<input data-field="startDate" placeholder="Jan 2023" /></label>
-          <label>End date<input data-field="endDate" placeholder="Present" /></label>
+          <label>Job Title<input data-field="title" placeholder="Software Engineer" /></label>
+          <label>Company<input data-field="company" placeholder="Company name" /></label>
+          <label>Start Date<input data-field="startDate" placeholder="Jan 2023" /></label>
+          <label>End Date<input data-field="endDate" placeholder="Present" /></label>
         </div>
-        <label>Achievements <small>one bullet per line</small>
-          <textarea data-field="highlights" class="short" placeholder="Reduced processing time by 35% by…"></textarea>
+        <label>Achievements <small>one point per line</small>
+          <textarea data-field="highlights" class="short" placeholder="Built a dashboard for weekly reports."></textarea>
         </label>
       </div>
     </template>
 
     <template id="educationTemplate">
       <div class="repeat-card" data-entry="education">
-        <button type="button" class="remove-button" aria-label="Remove entry">×</button>
+        <button type="button" class="remove-button" aria-label="Remove entry">x</button>
         <div class="two-columns">
-          <label>Degree<input data-field="degree" placeholder="B.Tech, Computer Science" /></label>
+          <label>Degree<input data-field="degree" placeholder="B.Tech Computer Science" /></label>
           <label>Institution<input data-field="institution" placeholder="University name" /></label>
-          <label>Graduation date<input data-field="date" placeholder="2025" /></label>
-          <label>Details<input data-field="details" placeholder="CGPA 8.7/10, Honors" /></label>
+          <label>Year<input data-field="date" placeholder="2026" /></label>
+          <label>Details<input data-field="details" placeholder="CGPA, honors, or subjects" /></label>
         </div>
       </div>
     </template>
 
     <template id="projectTemplate">
       <div class="repeat-card" data-entry="project">
-        <button type="button" class="remove-button" aria-label="Remove entry">×</button>
+        <button type="button" class="remove-button" aria-label="Remove entry">x</button>
         <div class="two-columns">
-          <label>Project name<input data-field="name" placeholder="Demand Forecasting System" /></label>
-          <label>Technologies<input data-field="technologies" placeholder="Python, XGBoost, FastAPI" /></label>
+          <label>Project Name<input data-field="name" placeholder="Resume Analyzer" /></label>
+          <label>Technologies<input data-field="technologies" placeholder="HTML, CSS, JavaScript, Node.js" /></label>
         </div>
         <label>Description
-          <textarea data-field="description" class="short" placeholder="What you built, why it mattered, and the measurable result."></textarea>
+          <textarea data-field="description" class="short" placeholder="Write what the project does and what you learned."></textarea>
         </label>
       </div>
     </template>
 
+    <template id="certificationTemplate">
+      <div class="repeat-card" data-entry="certification">
+        <button type="button" class="remove-button" aria-label="Remove entry">x</button>
+        <div class="two-columns">
+          <label>Certificate Name<input data-field="name" placeholder="Web Development Bootcamp" /></label>
+          <label>Issuer<input data-field="issuer" placeholder="Organization name" /></label>
+          <label>Date<input data-field="date" placeholder="May 2026" /></label>
+          <label>Credential ID<input data-field="credentialId" placeholder="Optional" /></label>
+        </div>
+      </div>
+    </template>
+
     <div class="toast" id="toast" role="status"></div>
-    <script type="module" src="/app.js?v=validation"></script>
+    <script type="module" src="/app.js?v=simple"></script>
   </body>
 </html>
