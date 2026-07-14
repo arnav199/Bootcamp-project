@@ -10,7 +10,7 @@ The project can:
 - compare a resume with a job description
 - show matched and missing skills
 - build a clean ATS friendly resume
-- export resume data as JSON
+- export resume data as PDF, DOC, or JSON
 
 ## Tech Stack
 

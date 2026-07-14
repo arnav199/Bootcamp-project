@@ -28,6 +28,21 @@ function escapeHtml(value = "") {
   return element.innerHTML;
 }
 
+function fileBaseName(resume = state.resume) {
+  return (resume.basics?.name || "resume")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "resume";
+}
+
+function downloadBlob(blob, filename) {
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 async function loadMeta() {
   try {
     const response = await fetch("/api/meta");
@@ -356,8 +371,8 @@ function addEntry(type) {
   updateResumeState();
 }
 
-function resumeAsText() {
-  const { basics, summary, skills, experience, education, projects, certifications } = state.resume;
+function resumeAsText(resume = state.resume) {
+  const { basics, summary, skills, experience, education, projects, certifications } = resume;
   const lines = [
     basics.name?.toUpperCase(),
     basics.title,
@@ -397,6 +412,190 @@ function resumeAsText() {
   ];
 
   return lines.filter((line, index) => line || lines[index - 1]).join("\n").trim();
+}
+
+function resumeAsDocHtml(resume) {
+  const { basics, summary, skills, experience, education, projects, certifications } = resume;
+  const section = (title, content) => content ? `<h2>${title}</h2>${content}` : "";
+  const contact = [basics.email, basics.phone, basics.location, basics.url].filter(Boolean).join(" | ");
+
+  const experienceHtml = experience.map((item) => `
+    <div class="item">
+      <p><strong>${escapeHtml([item.title, item.company].filter(Boolean).join(" - "))}</strong>
+      <span>${escapeHtml([item.startDate, item.endDate].filter(Boolean).join(" to "))}</span></p>
+      ${item.highlights?.length ? `<ul>${item.highlights.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>` : ""}
+    </div>
+  `).join("");
+
+  const educationHtml = education.map((item) => `
+    <div class="item">
+      <p><strong>${escapeHtml([item.degree, item.institution].filter(Boolean).join(" - "))}</strong>
+      <span>${escapeHtml(item.date || "")}</span></p>
+      ${item.details ? `<p>${escapeHtml(item.details)}</p>` : ""}
+    </div>
+  `).join("");
+
+  const projectHtml = projects.map((item) => `
+    <div class="item">
+      <p><strong>${escapeHtml(item.name || "")}</strong>
+      <span>${escapeHtml(item.technologies || "")}</span></p>
+      <p>${escapeHtml(item.description || "")}</p>
+    </div>
+  `).join("");
+
+  const certificationHtml = certifications.map((item) => `
+    <div class="item">
+      <p><strong>${escapeHtml([item.name, item.issuer].filter(Boolean).join(" - "))}</strong>
+      <span>${escapeHtml(item.date || "")}</span></p>
+      ${item.credentialId ? `<p>${escapeHtml(item.credentialId)}</p>` : ""}
+    </div>
+  `).join("");
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>${escapeHtml(basics.name || "Resume")}</title>
+    <style>
+      body { color: #111111; font-family: Arial, Helvetica, sans-serif; font-size: 11pt; line-height: 1.4; }
+      h1 { margin: 0; font-size: 22pt; text-transform: uppercase; }
+      h2 { margin: 18pt 0 6pt; border-bottom: 1px solid #999999; font-size: 10pt; text-transform: uppercase; }
+      p { margin: 4pt 0; }
+      ul { margin: 4pt 0 0 16pt; padding: 0; }
+      .title { font-weight: bold; }
+      .contact { color: #555555; font-size: 9pt; }
+      .item { margin-bottom: 9pt; }
+      .item p:first-child { display: flex; justify-content: space-between; gap: 12pt; }
+      span { color: #444444; }
+    </style>
+  </head>
+  <body>
+    <h1>${escapeHtml(basics.name || "Resume")}</h1>
+    ${basics.title ? `<p class="title">${escapeHtml(basics.title)}</p>` : ""}
+    ${contact ? `<p class="contact">${escapeHtml(contact)}</p>` : ""}
+    ${section("Professional Summary", summary ? `<p>${escapeHtml(summary)}</p>` : "")}
+    ${section("Skills", skills.length ? `<p>${escapeHtml(skills.join(", "))}</p>` : "")}
+    ${section("Experience", experienceHtml)}
+    ${section("Education", educationHtml)}
+    ${section("Projects", projectHtml)}
+    ${section("Certifications", certificationHtml)}
+  </body>
+</html>`;
+}
+
+function pdfSafeText(value) {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x09\x0a\x0d\x20-\x7e]/g, " ");
+}
+
+function escapePdfText(value) {
+  return pdfSafeText(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)")
+    .replace(/\r/g, "");
+}
+
+function wrapPdfLine(line, maxLength = 92) {
+  if (!line) return [""];
+
+  const wrapped = [];
+  let current = "";
+  for (const word of pdfSafeText(line).split(/\s+/)) {
+    if (!word) continue;
+    if (word.length > maxLength) {
+      if (current) wrapped.push(current);
+      for (let index = 0; index < word.length; index += maxLength) {
+        wrapped.push(word.slice(index, index + maxLength));
+      }
+      current = "";
+    } else if (!current) {
+      current = word;
+    } else if (`${current} ${word}`.length <= maxLength) {
+      current = `${current} ${word}`;
+    } else {
+      wrapped.push(current);
+      current = word;
+    }
+  }
+  if (current) wrapped.push(current);
+  return wrapped;
+}
+
+function buildPdfBlob(resume) {
+  const encoder = new TextEncoder();
+  const lines = resumeAsText(resume)
+    .split("\n")
+    .flatMap((line) => wrapPdfLine(line));
+  const pages = [[]];
+  const maxLinesPerPage = 48;
+
+  lines.forEach((line) => {
+    if (pages.at(-1).length >= maxLinesPerPage) pages.push([]);
+    pages.at(-1).push(line);
+  });
+
+  const objects = [];
+  const setObject = (number, body) => {
+    objects[number - 1] = `${number} 0 obj\n${body}\nendobj\n`;
+  };
+  const addObject = (body) => {
+    const number = objects.length + 1;
+    setObject(number, body);
+    return number;
+  };
+
+  setObject(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  setObject(2, "");
+  setObject(3, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+
+  const pageRefs = pages.map((pageLines) => {
+    const textCommands = pageLines.map((line) => line ? `(${escapePdfText(line)}) Tj` : "").join("\nT*\n");
+    const stream = `BT\n/F1 10 Tf\n50 742 Td\n14 TL\n${textCommands}\nET`;
+    const contentObject = addObject(`<< /Length ${encoder.encode(stream).length} >>\nstream\n${stream}\nendstream`);
+    const pageObject = addObject(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObject} 0 R >>`);
+    return `${pageObject} 0 R`;
+  });
+
+  setObject(2, `<< /Type /Pages /Kids [${pageRefs.join(" ")}] /Count ${pageRefs.length} >>`);
+
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((object) => {
+    offsets.push(encoder.encode(pdf).length);
+    pdf += object;
+  });
+
+  const xrefOffset = encoder.encode(pdf).length;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+  return new Blob([pdf], { type: "application/pdf" });
+}
+
+async function getValidatedResume() {
+  updateResumeState();
+  if (!validateBuilder()) return null;
+
+  const response = await fetch("/api/resume", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(state.resume),
+  });
+  const schema = await response.json();
+
+  if (!response.ok) {
+    showToast(schema.error || "Resume details are invalid.");
+    return null;
+  }
+
+  return schema;
 }
 
 $$(".mode-button").forEach((button) => {
@@ -547,30 +746,29 @@ $("#copyResume").addEventListener("click", async () => {
 });
 
 $("#downloadJson").addEventListener("click", async () => {
-  updateResumeState();
-  if (!validateBuilder()) return;
-
-  const response = await fetch("/api/resume", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(state.resume),
-  });
-  const schema = await response.json();
-
-  if (!response.ok) {
-    showToast(schema.error || "Resume details are invalid.");
-    return;
-  }
+  const schema = await getValidatedResume();
+  if (!schema) return;
 
   const blob = new Blob([JSON.stringify(schema, null, 2)], { type: "application/json" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `${state.resume.basics.name || "resume"}.json`
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-");
-  link.click();
-  URL.revokeObjectURL(link.href);
+  downloadBlob(blob, `${fileBaseName(schema)}.json`);
   showToast("Resume JSON downloaded");
+});
+
+$("#downloadPdf").addEventListener("click", async () => {
+  const schema = await getValidatedResume();
+  if (!schema) return;
+
+  downloadBlob(buildPdfBlob(schema), `${fileBaseName(schema)}.pdf`);
+  showToast("Resume PDF downloaded");
+});
+
+$("#downloadDoc").addEventListener("click", async () => {
+  const schema = await getValidatedResume();
+  if (!schema) return;
+
+  const blob = new Blob([resumeAsDocHtml(schema)], { type: "application/msword" });
+  downloadBlob(blob, `${fileBaseName(schema)}.doc`);
+  showToast("Resume DOC downloaded");
 });
 
 addEntry("experience");

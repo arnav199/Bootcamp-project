@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Simple local resume analyzer and resume builder project." />
     <title>Career Architect AI</title>
-    <link rel="stylesheet" href="/styles.css?v=simple-glass" />
+    <link rel="stylesheet" href="/styles.css?v=export-formats" />
   </head>
   <body>
     <header class="topbar">
@@ -196,8 +196,10 @@
           <aside class="preview-column">
             <div class="preview-actions">
               <span>Resume Preview</span>
-              <div>
+              <div class="export-actions">
                 <button class="text-button" id="copyResume" type="button">Copy Text</button>
+                <button class="secondary-button" id="downloadPdf" type="button">Download PDF</button>
+                <button class="secondary-button" id="downloadDoc" type="button">Download DOC</button>
                 <button class="secondary-button" id="downloadJson" type="button">Download JSON</button>
               </div>
             </div>
@@ -295,6 +297,6 @@
     </template>
 
     <div class="toast" id="toast" role="status"></div>
-    <script type="module" src="/app.js?v=simple"></script>
+    <script type="module" src="/app.js?v=export-formats"></script>
   </body>
 </html>
